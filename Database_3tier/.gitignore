@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environment
+venv/
+.env/
+
+# PyCharm
+.idea/
+
+# Environment variables
+.env
+
+# Database
+*.db
+
+# Coverage
+htmlcov/
+.coverage
+
+# Alembic
+versions/*.pyc
