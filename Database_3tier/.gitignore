@@ -3,22 +3,22 @@ __pycache__/
 *.pyc
 *.pyo
 
-# Virtual environment
+# Virtual environments
 venv/
-.env/
-
-# PyCharm
-.idea/
+.venv/
 
 # Environment variables
 .env
 
-# Database
+# PyCharm
+.idea/
+
+# Database (SQLite)
 *.db
 
 # Coverage
 htmlcov/
 .coverage
 
-# Alembic
-versions/*.pyc
+# Alembic bytecode
+alembic/versions/*.pyc
