@@ -30,3 +30,6 @@ class ChunkOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+class ChunkSearch(BaseModel):
+    query_embedding: List[float]
