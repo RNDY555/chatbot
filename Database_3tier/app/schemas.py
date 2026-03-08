@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 class TaskCreate(BaseModel):
     title:str
@@ -19,3 +19,14 @@ class TaskRemove(BaseModel):
     class Config:
         orm_mode = True
 
+class ChunkCreate(BaseModel):
+    content: str
+    embedding: List[float]
+
+class ChunkOut(BaseModel):
+    id: int
+    content: str
+    embedding: List[float]
+
+    class Config:
+        orm_mode = True
