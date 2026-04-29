@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import prisma from "../../lib/prisma";
-import { trimiteDocumentInFlowise } from "../../lib/flowise";
+import prisma from "../../lib/prisma"; // Asigură-te că calea către prisma e corectă
 
 export const runtime = "nodejs";
 
@@ -8,9 +7,25 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
+    const rol = searchParams.get("rol");
+    const departament = searchParams.get("departament");
+
+    let whereClause = {};
+
+    if (rol === "ADMIN") {
+      whereClause = {
+        user: {
+          departament: departament || ""
+        }
+      };
+    } else if (userId) {
+      whereClause = {
+        userId: userId
+      };
+    }
 
     const tichete = await prisma.ticket.findMany({
-      where: userId ? { userId } : {},
+      where: whereClause,
       orderBy: [
         { status: "asc" },
         { createdAt: "desc" },
@@ -20,7 +35,6 @@ export async function GET(request: Request) {
     return NextResponse.json(tichete);
   } catch (error) {
     console.error("Eroare la citirea tichetelor:", error);
-
     return NextResponse.json(
       { error: "Eroare la citirea tichetelor." },
       { status: 500 }
@@ -30,12 +44,9 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const formData = await request.formData();
-
-    const subiect = formData.get("subiect") as string | null;
-    const descriere = formData.get("descriere") as string | null;
-    const userId = formData.get("userId") as string | null;
-    const file = formData.get("document") as File | null;
+    // Acum backend-ul așteaptă text (JSON), nu fișiere (FormData)
+    const body = await request.json();
+    const { subiect, descriere, userId } = body;
 
     if (!subiect || !descriere) {
       return NextResponse.json(
@@ -44,59 +55,19 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!file) {
-      return NextResponse.json(
-        { error: "Documentul este obligatoriu." },
-        { status: 400 }
-      );
-    }
-
-    if (!file.name.toLowerCase().endsWith(".docx")) {
-      return NextResponse.json(
-        { error: "Fisierul trebuie sa fie de tip .docx." },
-        { status: 400 }
-      );
-    }
-
+    // Creăm tichetul în baza de date fără documentText
     const tichetNou = await prisma.ticket.create({
       data: {
         subiect,
         descriere,
         userId: userId || null,
-        documentText: file.name,
         status: "NEREZOLVAT",
       },
     });
 
-    try {
-      await trimiteDocumentInFlowise({
-        ticketId: tichetNou.id,
-        file,
-      });
-
-      const tichetActualizat = await prisma.ticket.update({
-        where: { id: tichetNou.id },
-        data: {
-          status: "REZOLVAT",
-          resolvedAt: new Date(),
-        },
-      });
-
-      return NextResponse.json(tichetActualizat, { status: 201 });
-    } catch (flowiseError) {
-      console.error("Eroare Flowise:", flowiseError);
-
-      return NextResponse.json(
-        {
-          error:
-            "Tichetul a fost creat, dar documentul nu a putut fi trimis in Flowise.",
-        },
-        { status: 500 }
-      );
-    }
+    return NextResponse.json(tichetNou, { status: 201 });
   } catch (error) {
     console.error("Eroare la crearea tichetului:", error);
-
     return NextResponse.json(
       { error: "Eroare la crearea tichetului." },
       { status: 500 }

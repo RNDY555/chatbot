@@ -27,22 +27,19 @@ model Message {
   createdAt DateTime @default(now())
 
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Ticket {
   id           String    @id @default(cuid())
-
   subiect      String
   descriere    String
   documentText String?
-
   status       String    @default("NEREZOLVAT")
-
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   resolvedAt   DateTime?
 
   userId       String?
-  user         User?     @relation(fields: [userId], references: [id])
+  user         User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

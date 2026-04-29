@@ -1,40 +1,37 @@
-import { NextResponse } from 'next/server';
-import prisma from '../../lib/prisma';
+import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcrypt";
+
+const prisma = new PrismaClient();
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, password, nume, prenume, departament, rol } = body;
-
+    const { nume, prenume, email, password, departament, rol } = body;
 
     if (!email || !password || !nume || !prenume) {
-      return NextResponse.json({ error: "Lipsesc campuri obligatorii." }, { status: 400 });
+      return NextResponse.json({ error: "Date incomplete." }, { status: 400 });
     }
 
-    const userExistent = await prisma.user.findUnique({
-      where: { email: email }
-    });
+    // Această linie transformă "1234" în "$2b$10$X..."
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    if (userExistent) {
-      return NextResponse.json({ error: "Acest email este deja folosit." }, { status: 409 });
-    }
-
-
-    const nouUtilizator = await prisma.user.create({
+    const newUser = await prisma.user.create({
       data: {
-        email,
-        password, 
         nume,
         prenume,
-        departament: departament || "-",
-        rol: rol || "MEMBRU"
-      }
+        email: email.toLowerCase().trim(),
+        password: hashedPassword, // SALVĂM VARIANTA CRIPTATĂ
+        departament: departament,
+        rol: rol || "MEMBRU",
+      },
     });
 
-    return NextResponse.json({ message: "Utilizator creat cu succes!", id: nouUtilizator.id }, { status: 201 });
-
-  } catch (error) {
-    console.error("Eroare la crearea utilizatorului:", error);
-    return NextResponse.json({ error: "Eroare interna de server." }, { status: 500 });
+    return NextResponse.json({ success: true }, { status: 201 });
+  } catch (error: any) {
+    if (error.code === "P2002") {
+      return NextResponse.json({ error: "Acest email este deja înregistrat." }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Eroare la baza de date." }, { status: 500 });
   }
 }

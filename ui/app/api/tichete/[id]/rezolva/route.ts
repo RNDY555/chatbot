@@ -15,25 +15,12 @@ export async function POST(
 
     const subiect = formData.get("subiect") as string | null;
     const descriere = formData.get("descriere") as string | null;
+    const explicatie = formData.get("explicatie") as string | null;
     const file = formData.get("document") as File | null;
 
     if (!subiect || !descriere) {
       return NextResponse.json(
-        { error: "Subiectul si descrierea sunt obligatorii." },
-        { status: 400 }
-      );
-    }
-
-    if (!file) {
-      return NextResponse.json(
-        { error: "Trebuie sa incarci un fisier .docx." },
-        { status: 400 }
-      );
-    }
-
-    if (!file.name.toLowerCase().endsWith(".docx")) {
-      return NextResponse.json(
-        { error: "Fisierul trebuie sa fie de tip .docx." },
+        { error: "Subiectul și descrierea sunt obligatorii." },
         { status: 400 }
       );
     }
@@ -44,22 +31,36 @@ export async function POST(
 
     if (!tichetExistent) {
       return NextResponse.json(
-        { error: "Tichetul nu exista." },
+        { error: "Tichetul nu există." },
         { status: 404 }
       );
     }
 
-    await trimiteDocumentInFlowise({
-      ticketId: id,
-      file,
-    });
+    if (file && file.size > 0 && file.name !== "undefined") {
+      if (!file.name.toLowerCase().endsWith(".docx")) {
+        return NextResponse.json(
+          { error: "Fișierul trebuie să fie de tip .docx." },
+          { status: 400 }
+        );
+      }
+
+      try {
+        await trimiteDocumentInFlowise({
+          ticketId: id,
+          file,
+        });
+      } catch (e) {
+        console.error("Eroare la trimiterea în flowise:", e);
+      }
+    }
+
     const tichetRezolvat = await prisma.ticket.update({
       where: { id },
       data: {
         subiect,
         descriere,
-        documentText: file.name,
-        status: "REZOLVAT",
+        documentText: explicatie || (file && file.size > 0 ? file.name : null),
+        status: "Rezolvat",
         resolvedAt: new Date(),
       },
     });
@@ -70,10 +71,7 @@ export async function POST(
 
     return NextResponse.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Eroare la rezolvarea tichetului.",
+        error: "Eroare la rezolvarea tichetului.",
       },
       { status: 500 }
     );
