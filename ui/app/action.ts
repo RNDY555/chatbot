@@ -29,3 +29,15 @@ export async function checkLogin(email: string, parola: string) {
     return { error: "Eroare la conectarea cu baza de date." };
   }
 }
+export async function saveMessage(userId: string, text: string, sender: "user" | "bot") {
+  return await prisma.message.create({
+    data: { userId, text, sender }
+  });
+}
+
+export async function getChatHistory(userId: string) {
+  return await prisma.message.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'asc' }
+  });
+}

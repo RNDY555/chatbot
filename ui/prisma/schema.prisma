@@ -15,4 +15,14 @@ model User {
   prenume     String
   departament String
   rol         String   @default("MEMBRU")
+  messages    Message[]
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  text      String
+  sender    String   
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
 }
