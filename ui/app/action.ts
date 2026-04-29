@@ -1,6 +1,7 @@
 "use server";
 
 import prisma from './lib/prisma'; 
+import bcrypt from 'bcrypt'
 
 export async function checkLogin(email: string, parola: string) {
   try {
@@ -8,8 +9,14 @@ export async function checkLogin(email: string, parola: string) {
       where: { email: email }
     });
 
-    if (!user || user.password !== parola) {
+    if (!user) {
       return { error: "Email sau parolă incorectă!" };
+    }
+
+    const parolaCorecta = await bcrypt.compare(parola, user.password);
+
+    if (!parolaCorecta){
+        return { error: "Email sau parolă incorectă!" };
     }
 
     return {

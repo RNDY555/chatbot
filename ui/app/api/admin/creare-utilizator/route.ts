@@ -2,6 +2,8 @@
 import { NextResponse } from 'next/server';
 // Aici importi instanta ta de Prisma (ex: import prisma from '@/lib/prisma')
 import prisma from '../../../lib/prisma';
+import bcrypt from 'bcrypt'
+
 
 export async function POST(request: Request) {
   try {
@@ -21,14 +23,15 @@ export async function POST(request: Request) {
     if (userExistent) {
       return NextResponse.json({ error: "Acest email este deja folosit." }, { status: 409 });
     }
+    // 3. Hash-uim parola inainte sa o salvam in baza de date
+    const parolaHashuita = await bcrypt.hash(password, 12);
 
-    // 3. Crearea utilizatorului in baza de date (SQLite)
-    // NOTA DE HACKATHON: Aici ar trebui sa criptezi parola cu 'bcrypt',
-    // dar pentru demo merge si text simplu.
+    // 4. Crearea utilizatorului in baza de date (SQLite)
+
     const nouUtilizator = await prisma.user.create({
       data: {
         email,
-        password, // <--- PAROLA NECRIPTATA (doar pentru testare!)
+        password: parolaHashuita,
         nume,
         prenume,
         departament: departament || "-",
