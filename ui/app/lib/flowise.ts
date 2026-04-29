@@ -1,4 +1,4 @@
-export async function trimiteDocumentDocxInFlowise(params: {
+export async function trimiteDocumentInFlowise(params: {
   ticketId: string;
   file: File;
 }) {

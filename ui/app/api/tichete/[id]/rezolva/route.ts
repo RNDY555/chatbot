@@ -10,13 +10,30 @@ export async function POST(
 ) {
   try {
     const { id } = await context.params;
-    const body = await request.json();
 
-    const { subiect, descriere, documentText } = body;
+    const formData = await request.formData();
 
-    if (!subiect || !descriere || !documentText) {
+    const subiect = formData.get("subiect") as string | null;
+    const descriere = formData.get("descriere") as string | null;
+    const file = formData.get("document") as File | null;
+
+    if (!subiect || !descriere) {
       return NextResponse.json(
-        { error: "Subiectul, descrierea si documentul sunt obligatorii." },
+        { error: "Subiectul si descrierea sunt obligatorii." },
+        { status: 400 }
+      );
+    }
+
+    if (!file) {
+      return NextResponse.json(
+        { error: "Trebuie sa incarci un fisier .docx." },
+        { status: 400 }
+      );
+    }
+
+    if (!file.name.toLowerCase().endsWith(".docx")) {
+      return NextResponse.json(
+        { error: "Fisierul trebuie sa fie de tip .docx." },
         { status: 400 }
       );
     }
@@ -34,17 +51,14 @@ export async function POST(
 
     await trimiteDocumentInFlowise({
       ticketId: id,
-      subiect,
-      descriere,
-      documentText,
+      file,
     });
-
     const tichetRezolvat = await prisma.ticket.update({
       where: { id },
       data: {
         subiect,
         descriere,
-        documentText,
+        documentText: file.name,
         status: "REZOLVAT",
         resolvedAt: new Date(),
       },
@@ -55,7 +69,12 @@ export async function POST(
     console.error("Eroare la rezolvarea tichetului:", error);
 
     return NextResponse.json(
-      { error: "Eroare la rezolvarea tichetului sau la trimiterea in Flowise." },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Eroare la rezolvarea tichetului.",
+      },
       { status: 500 }
     );
   }

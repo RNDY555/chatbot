@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "../../lib/prisma";
-import { trimiteDocumentDocxInFlowise} from "../../lib/flowise";
+import { trimiteDocumentInFlowise } from "../../lib/flowise";
 
 export const runtime = "nodejs";
 
@@ -58,25 +58,22 @@ export async function POST(request: Request) {
       );
     }
 
-    // 1. Creezi tichetul in baza de date
     const tichetNou = await prisma.ticket.create({
       data: {
         subiect,
         descriere,
         userId: userId || null,
-        documentText: file.name, // folosim campul existent ca sa tinem minte numele fisierului
+        documentText: file.name,
         status: "NEREZOLVAT",
       },
     });
 
     try {
-      // 2. Trimiti DOAR fisierul in Flowise
-      await trimiteDocumentDocxInFlowise({
+      await trimiteDocumentInFlowise({
         ticketId: tichetNou.id,
         file,
       });
 
-      // 3. Daca a mers, marchezi ticketul ca rezolvat
       const tichetActualizat = await prisma.ticket.update({
         where: { id: tichetNou.id },
         data: {
@@ -89,10 +86,10 @@ export async function POST(request: Request) {
     } catch (flowiseError) {
       console.error("Eroare Flowise:", flowiseError);
 
-      // Ticketul ramane creat, dar nerezolvat
       return NextResponse.json(
         {
-          error: "Tichetul a fost creat, dar documentul nu a putut fi trimis in Flowise.",
+          error:
+            "Tichetul a fost creat, dar documentul nu a putut fi trimis in Flowise.",
         },
         { status: 500 }
       );

@@ -52,6 +52,21 @@ export default function Home() {
 
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
 
+  useEffect(() => {
+    const userSalvat = localStorage.getItem("currentUser");
+
+    if (userSalvat) {
+      try {
+        const user = JSON.parse(userSalvat);
+        setCurrentUser(user);
+        setIsLoggedIn(true);
+        setActiveTab("tichete");
+      } catch (error) {
+        localStorage.removeItem("currentUser");
+      }
+    }
+  }, []);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoginLoading(true);
@@ -65,6 +80,7 @@ export default function Home() {
       } else if (rezultat?.success) {
         setCurrentUser(rezultat.user);
         setIsLoggedIn(true);
+        localStorage.setItem("currentUser", JSON.stringify(rezultat.user));
       }
     } catch (error) {
       setLoginError("Eroare de sistem.");
@@ -81,6 +97,7 @@ export default function Home() {
     setMessages([]);
     setTichete([]);
     setActiveTab("chatbot");
+    localStorage.removeItem("currentUser");
   };
 
   const handleTrimite = async () => {
@@ -193,6 +210,7 @@ export default function Home() {
 
       if (!response.ok) {
         setTicketError(data.error || "Nu s-a putut crea tichetul.");
+        await incarcaTichete();
         return;
       }
 
@@ -596,28 +614,41 @@ export default function Home() {
                   Document Word pentru chatbot
                 </label>
 
-                <input
-                  type="file"
-                  accept=".docx"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] || null;
-                    setTicketFile(file);
-                  }}
-                  className="w-full bg-[#EEF2F6] text-slate-800 px-5 py-3 rounded-2xl outline-none focus:ring-2 focus:ring-blue-400"
-                  required
-                />
+                {!ticketFile ? (
+                  <>
+                    <input
+                      type="file"
+                      accept=".docx"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        setTicketFile(file);
+                      }}
+                      className="w-full bg-[#EEF2F6] text-slate-800 px-5 py-3 rounded-2xl outline-none focus:ring-2 focus:ring-blue-400"
+                      required
+                    />
 
-                <p className="text-sm text-slate-400 mt-2">
-                  Incarca un fisier .docx. Doar acest document va fi trimis in baza de
-                  cunostinte a chatbotului. Subiectul si descrierea raman doar pentru
-                  afisarea tichetului in site.
-                </p>
+                    <p className="text-sm text-slate-400 mt-2">
+                      Incarca un fisier .docx. Doar acest document va fi trimis in baza de
+                      cunostinte a chatbotului. Subiectul si descrierea raman doar pentru
+                      afisarea tichetului in site.
+                    </p>
+                  </>
+                ) : (
+                  <div className="bg-[#EEF2F6] rounded-2xl px-5 py-4 border border-slate-200">
+                    <p className="text-sm text-slate-500">Fisier selectat:</p>
 
-                {ticketFile && (
-                  <p className="text-sm text-slate-500 mt-2">
-                    Fisier selectat:{" "}
-                    <span className="font-medium">{ticketFile.name}</span>
-                  </p>
+                    <p className="text-slate-800 font-medium mt-1">
+                      {ticketFile.name}
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={() => setTicketFile(null)}
+                      className="mt-3 text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Schimba fisierul
+                    </button>
+                  </div>
                 )}
               </div>
 
