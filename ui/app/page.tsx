@@ -471,7 +471,7 @@ export default function Home() {
                             </div>
                             <div className="flex items-center gap-3">
                               <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${ticket.status?.toLowerCase() === 'rezolvat' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}`}>{ticket.status}
-                              </span>
+                            </span>
                               <button 
                                 onClick={() => router.push(`/tichete/${ticket.id}`)}
                                 className="p-2 text-blue-500 hover:bg-blue-50 rounded-full transition-colors"

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, CheckCircle, FileText, Moon, Sun, Paperclip, X } from "lucide-react";
+import { ArrowLeft, CheckCircle, FileText, Moon, Sun, Paperclip, X, Info } from "lucide-react";
 
 type Ticket = {
   id: string;
@@ -113,6 +113,8 @@ export default function TichetPage() {
     );
   }
 
+  const esteRezolvat = tichet?.status?.toLowerCase() === "rezolvat";
+
   return (
     <div className="min-h-screen bg-[#F0F2F5] dark:bg-[#0F172A] p-8 font-sans relative transition-colors duration-300">
       <div className="absolute top-8 right-8">
@@ -131,7 +133,7 @@ export default function TichetPage() {
             <h1 className="text-2xl font-medium text-slate-800 dark:text-white flex items-center gap-3">
               <FileText className="text-blue-500" /> Tichet
             </h1>
-            <span className={`px-4 py-2 rounded-full text-white text-xs font-bold uppercase tracking-wide ${tichet?.status?.toLowerCase() === 'rezolvat' ? 'bg-emerald-500' : 'bg-red-500'}`}>
+            <span className={`px-4 py-2 rounded-full text-white text-xs font-bold uppercase tracking-wide ${esteRezolvat ? 'bg-emerald-500' : 'bg-red-500'}`}>
               {tichet?.status}
             </span>
           </div>
@@ -142,7 +144,7 @@ export default function TichetPage() {
             </div>
           )}
 
-          <form onSubmit={handleRezolva} className="space-y-6" noValidate>
+          <div className="space-y-6">
             <div>
               <label className="block text-sm font-light text-slate-600 dark:text-slate-400 mb-2">Subiect</label>
               <input value={subiect} readOnly className="w-full bg-[#E2E8F0] dark:bg-slate-900 text-slate-800 dark:text-white px-5 py-3 rounded-2xl outline-none font-light opacity-70 border border-transparent dark:border-slate-700" />
@@ -153,8 +155,24 @@ export default function TichetPage() {
               <textarea value={descriere} readOnly className="w-full bg-[#E2E8F0] dark:bg-slate-900 text-slate-800 dark:text-white px-5 py-3 rounded-2xl outline-none min-h-[130px] font-light resize-none opacity-70 border border-transparent dark:border-slate-700" />
             </div>
 
-            {currentUser?.rol === "ADMIN" && (tichet?.status?.toLowerCase() !== "rezolvat") && (
-              <>
+            {esteRezolvat && (
+              <div className="mt-8 p-6 bg-emerald-50 dark:bg-emerald-500/5 rounded-3xl border border-emerald-100 dark:border-emerald-500/20 animation-fade-in">
+                <label className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400 mb-3">
+                  <Info size={18} /> Soluționare Tichet
+                </label>
+                <div className="text-slate-700 dark:text-slate-300 font-light leading-relaxed whitespace-pre-wrap bg-white/50 dark:bg-slate-900/50 p-4 rounded-2xl">
+                  {tichet?.documentText || "Administratorul a marcat tichetul ca rezolvat fără o explicație suplimentară."}
+                </div>
+                {tichet?.resolvedAt && (
+                  <p className="mt-4 text-[10px] text-emerald-600/60 dark:text-emerald-400/40 uppercase font-bold tracking-widest">
+                    Data rezolvării: {new Date(tichet.resolvedAt).toLocaleString("ro-RO")}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {currentUser?.rol === "ADMIN" && !esteRezolvat && (
+              <form onSubmit={handleRezolva} className="pt-4 space-y-6" noValidate>
                 <div>
                   <label className="block text-sm font-light text-slate-600 dark:text-slate-400 mb-2">Explicație problemă</label>
                   <textarea 
@@ -170,17 +188,16 @@ export default function TichetPage() {
                   {!documentFile ? (
                     <label className="w-full bg-[#E2E8F0] dark:bg-slate-900 text-slate-500 px-5 py-3 rounded-2xl border border-transparent dark:border-slate-700 flex items-center gap-3 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-800 transition-all font-light">
                       <Paperclip size={18} className="text-blue-500" />
-                      <span>Selectează un fișier .docx </span>
+                      <span>Selectează un fișier .docx dacă dorești</span>
                       <input 
                         type="file" 
                         accept=".docx" 
                         onChange={(e) => setDocumentFile(e.target.files?.[0] || null)} 
                         className="hidden" 
-                        required={false}
                       />
                     </label>
                   ) : (
-                    <div className="bg-[#E2E8F0] dark:bg-slate-900 rounded-2xl px-5 py-4 border border-transparent dark:border-slate-700 flex items-center justify-between transition-colors">
+                    <div className="bg-[#E2E8F0] dark:bg-slate-900 rounded-2xl px-5 py-4 border border-transparent dark:border-slate-700 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <FileText size={18} className="text-blue-500" />
                         <span className="text-slate-800 dark:text-white font-medium text-sm truncate max-w-[200px]">{documentFile.name}</span>
@@ -199,17 +216,17 @@ export default function TichetPage() {
                     {isSaving ? "Se trimite..." : "Rezolvă tichet"}
                   </button>
                 </div>
-              </>
+              </form>
             )}
 
-            {currentUser?.rol !== "ADMIN" && (tichet?.status?.toLowerCase() !== "rezolvat") && (
+            {currentUser?.rol !== "ADMIN" && !esteRezolvat && (
               <div className="p-4 bg-blue-50 dark:bg-blue-500/10 rounded-2xl border border-blue-100 dark:border-blue-500/20">
                 <p className="text-sm text-blue-600 dark:text-blue-400 font-light text-center">
                   Acest tichet este în curs de analiză de către un administrator.
                 </p>
               </div>
             )}
-          </form>
+          </div>
         </div>
       </div>
     </div>
